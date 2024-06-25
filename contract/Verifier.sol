@@ -192,7 +192,7 @@ contract Verifier {
         ) public returns (bool r) {
         uint[] memory inputValues = new uint[](1);
         
-        inputValues[0] = uint256(msg.sender);
+        inputValues[0] = uint256(uint160(msg.sender));
 
         if (verify(inputValues, proof) == 0) {
             winners.push(msg.sender);
@@ -200,5 +200,9 @@ contract Verifier {
         } else {
             return false;
         }
+    }
+
+    function getWinners() public view returns (address[] memory) {
+        return winners;
     }
 }

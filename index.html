@@ -6,11 +6,42 @@
     <title>Image Coordinate Sender with ZoKrates</title>
     <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
     <script src="https://unpkg.com/zokrates-js@latest/umd.min.js"></script>
+    <style>
+        .container {
+            display: flex;
+        }
+        #image-container {
+            flex: 1;
+            margin-right: 20px; /* Adjust margin as needed */
+        }
+        #table-container {
+            flex: 1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
 </head>
 <body>
-    <h1>Click on Waldo</h1>
-    <img id="myImage" src="waldo1.png" alt="Clickable Image" style="width: 800px; height: 600px;">
-
+    <div class="container">
+        <div id="image-container">
+            <h1>Click on Waldo</h1>
+            <img id="myImage" src="waldo1.png" alt="Clickable Image" style="width: 800px; height: 600px;">
+        </div>
+        <div id="table-container">
+            <table id="winners-table">
+                <tr>
+                    <th> Winners: </th>
+                </tr>
+            </table>
+        </div>
+    </div>
     
     <script>
         let web3;
@@ -21,6 +52,31 @@
                     await window.ethereum.request({ method: 'eth_requestAccounts' });
                     web3 = new Web3(window.ethereum);
                     console.log("MetaMask connected");
+                    const contractAddress = "0x452076238753391ea0Ff379c8aAa080C6da4dE9A";
+                    const contractABI = [
+                    {
+                      "inputs": [],
+                      "name": "getWinners",
+                      "outputs": [
+                        {
+                          "internalType": "address[]",
+                          "name": "",
+                          "type": "address[]"
+                        }
+                      ],
+                      "stateMutability": "view",
+                      "type": "function"
+                    },
+                    ];
+                    const contract = new web3.eth.Contract(contractABI, contractAddress);
+                    const table = document.getElementById('winners-table');
+                    const out = await contract.methods.getWinners().call();
+                    out.forEach((el) => {
+                        const row = table.insertRow();
+                        const cell1 = row.insertCell(0);
+                        cell1.textContent = el;
+                    });
+                    
                 } catch (error) {
                     console.error("User denied account access", error);
                 }
@@ -40,7 +96,7 @@
                 const account = accounts[0];
 
                 // init contract
-                const contractAddress = "0x6Bd021734a57886A451e93892E43F593de31b854";
+                const contractAddress = "0x452076238753391ea0Ff379c8aAa080C6da4dE9A";
                 const contractABI = [
                 {
                   "inputs": [
