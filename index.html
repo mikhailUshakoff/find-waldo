@@ -40,7 +40,7 @@
                 const account = accounts[0];
 
                 // init contract
-                const contractAddress = "0x1DEE5CfEaae01c57eBd66a715df1291565E3cc30";
+                const contractAddress = "0x6Bd021734a57886A451e93892E43F593de31b854";
                 const contractABI = [
                 {
                   "inputs": [
@@ -120,11 +120,12 @@
                 // init zokrates
                 zokrates.initialize().then(async (zokratesProvider) => {
                     const source = `
-                        def main(private field x, private field y) {
+                        def main(private field x, private field y, private field puser, field user) {
                             assert(x >= 607); 
                             assert(x <= 628);
                             assert(y >= 284);
                             assert(y <= 318);
+                            assert(puser == user);
                             return;
                         }
                     `;
@@ -138,7 +139,7 @@
                     try {
                         const result = zokratesProvider.computeWitness(
                             artifacts, 
-                            [x.toString(), y.toString()]
+                            [x.toString(), y.toString(), account, account]
                         );
                         witness = result.witness;
                     } catch (error) {
