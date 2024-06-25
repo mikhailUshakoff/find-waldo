@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Coordinate Sender with ZoKrates</title>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+    <script src="https://unpkg.com/zokrates-js@latest/umd.min.js"></script>
+</head>
+<body>
+    <h1>Click on Waldo</h1>
+    <img id="myImage" src="waldo1.png" alt="Clickable Image" style="width: 800px; height: 600px;">
+
+    
+    <script>
+        let web3;
+
+        async function connectMetaMask() {
+            if (window.ethereum) {
+                try {
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    web3 = new Web3(window.ethereum);
+                    console.log("MetaMask connected");
+                } catch (error) {
+                    console.error("User denied account access", error);
+                }
+            } else {
+                console.log('MetaMask is not installed');
+            }
+        }
+
+        document.getElementById("myImage").addEventListener("click", async function(event) {
+            const rect = event.target.getBoundingClientRect();
+            const x = Math.round(event.clientX - rect.left);
+            const y = Math.round(event.clientY - rect.top);
+            console.log("Coordinates: ", x, y);
+
+            if (web3) {
+                const accounts = await web3.eth.getAccounts();
+                const account = accounts[0];
+
+                // init contract
+                const contractAddress = "0x1DEE5CfEaae01c57eBd66a715df1291565E3cc30";
+                const contractABI = [
+                {
+                  "inputs": [
+                    {
+                      "components": [
+                        {
+                          "components": [
+                            {
+                              "internalType": "uint256",
+                              "name": "X",
+                              "type": "uint256"
+                            },
+                            {
+                              "internalType": "uint256",
+                              "name": "Y",
+                              "type": "uint256"
+                            }
+                          ],
+                          "internalType": "struct Pairing.G1Point",
+                          "name": "a",
+                          "type": "tuple"
+                        },
+                        {
+                          "components": [
+                            {
+                              "internalType": "uint256[2]",
+                              "name": "X",
+                              "type": "uint256[2]"
+                            },
+                            {
+                              "internalType": "uint256[2]",
+                              "name": "Y",
+                              "type": "uint256[2]"
+                            }
+                          ],
+                          "internalType": "struct Pairing.G2Point",
+                          "name": "b",
+                          "type": "tuple"
+                        },
+                        {
+                          "components": [
+                            {
+                              "internalType": "uint256",
+                              "name": "X",
+                              "type": "uint256"
+                            },
+                            {
+                              "internalType": "uint256",
+                              "name": "Y",
+                              "type": "uint256"
+                            }
+                          ],
+                          "internalType": "struct Pairing.G1Point",
+                          "name": "c",
+                          "type": "tuple"
+                        }
+                      ],
+                      "internalType": "struct Verifier.Proof",
+                      "name": "proof",
+                      "type": "tuple"
+                    }
+                  ],
+                  "name": "verifyTx",
+                  "outputs": [
+                    {
+                      "internalType": "bool",
+                      "name": "r",
+                      "type": "bool"
+                    }
+                  ],
+                  "stateMutability": "nonpayable",
+                  "type": "function"
+                }
+                ];
+                const contract = new web3.eth.Contract(contractABI, contractAddress);
+                
+                // init zokrates
+                zokrates.initialize().then(async (zokratesProvider) => {
+                    const source = `
+                        def main(private field x, private field y) {
+                            assert(x >= 607); 
+                            assert(x <= 628);
+                            assert(y >= 284);
+                            assert(y <= 318);
+                            return;
+                        }
+                    `;
+
+                    // compilation
+                    const artifacts = zokratesProvider.compile(source);
+                    console.log('artifacts',artifacts);
+
+                    // computation
+                    let witness;  
+                    try {
+                        const result = zokratesProvider.computeWitness(
+                            artifacts, 
+                            [x.toString(), y.toString()]
+                        );
+                        witness = result.witness;
+                    } catch (error) {
+                        alert('Waldo not found');
+                    }
+
+                    if (witness) {
+                        // get pk fromfile
+                        const response = await fetch('pk.bin');
+                        if (!response.ok) {
+                          throw new Error('Network response was not ok');
+                        }
+                    
+                        // Read the response as an ArrayBuffer
+                        const arrayBuffer = await response.arrayBuffer();
+                    
+                        // Convert the ArrayBuffer to a Uint8Array (or other typed array if needed)
+                        const pk = new Uint8Array(arrayBuffer);
+
+                        // generate proof
+                        const proof = zokratesProvider.generateProof(
+                          artifacts.program,
+                          witness,
+                          pk
+                        );
+                        try {
+                            const res = await contract.methods.verifyTx(proof.proof).send({ from: account });
+                            alert('Waldo found and proof sent to the contract');
+                        } catch (error) {
+                            console.error("Error sending proof to the contract", error);
+                        }
+                    } else {
+                        console.error('Waldo not found');
+                    } 
+                });
+            } else {
+                console.log("MetaMask is not connected");
+            }
+        });
+
+        window.addEventListener('load', connectMetaMask);
+    </script>
+</body>
+</html>
