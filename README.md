@@ -1,8 +1,8 @@
-##General
+## General
 
 Use ZoKrates to submit the proof that you found Waldo to the smart contract.
 
-##How to run
+## How to run
 
 Switch your MetaMask to the OP-Sepolia network.
 ```bash
