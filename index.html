@@ -175,20 +175,19 @@
                 
                 // init zokrates
                 zokrates.initialize().then(async (zokratesProvider) => {
-                    const source = `
-                        def main(private field x, private field y, private field puser, field user) {
-                            assert(x >= 607); 
-                            assert(x <= 628);
-                            assert(y >= 284);
-                            assert(y <= 318);
-                            assert(puser == user);
-                            return;
-                        }
-                    `;
-
-                    // compilation
-                    const artifacts = zokratesProvider.compile(source);
-                    console.log('artifacts',artifacts);
+                    // read compilation artifacts
+                    const response = await fetch('artifacts.json');
+                    if (!response.ok) {
+                      throw new Error('Network response was not ok!');
+                    }
+                    // Read the response as an json
+                    const artifacts = await response.json();
+                    // Extract the values from the object
+                    const values = Object.values(artifacts.program);
+                    // Create a Uint8Array from the values
+                    const uint8Array = new Uint8Array(values);
+                    // Replace the original values with the Uint8Array
+                    artifacts.program = uint8Array;
 
                     // computation
                     let witness;  
