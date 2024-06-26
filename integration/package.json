@@ -4,11 +4,13 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "build": "node build-artifacts.js"
+    "build": "node build-artifacts.js",
+    "compile": "node compile.js",
+    "deploy": "node deploy.js"
   },
   "dependencies": {
+    "ethers": "^6.13.1",
+    "solc": "^0.8.26",
     "zokrates-js": "^1.1.9"
   }
-  
-
 }
